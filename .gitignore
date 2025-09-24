@@ -1,0 +1,7 @@
+# Conteúdo do arquivo .gitignore:
+node_modules/
+.env
+backend/uploads/
+*.log
+build/
+dist/
