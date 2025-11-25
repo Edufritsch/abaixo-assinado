@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js",  //<-- VÍRGULA ADICIONADA
-    "build": "vite build"      //<-- SCRIPT ADICIONADO
+    "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.12.2",
@@ -18,7 +17,7 @@
     "multer": "^2.0.2",
     "pg": "^8.16.3"
   },
-  "description": "1) Crie `.env` (veja exemplo). 2) `npm install` 3) `npm run dev`",
+  "description": "API do abaixo-assinado",
   "main": "index.js",
   "keywords": [],
   "author": "",
