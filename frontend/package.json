@@ -11,13 +11,15 @@
   "dependencies": {
     "@capacitor-firebase/authentication": "^7.3.1",
     "@capacitor/android": "^7.4.3",
+    "@react-oauth/google": "^0.12.2",
     "axios": "^1.7.7",
+    "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.0"
+    "vite": "^7.2.4"
   }
 }
