@@ -1,22 +1,41 @@
 // backend/index.js
 
-require('dotenv').config()
-const express = require('express')
-const cors = require('cors')
-const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
-const axios = require('axios')
-const jwt = require('jsonwebtoken')
-const crypto = require('crypto')
-const { Pool } = require('pg'); // Adicione esta linha
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { Pool } = require('pg');
+const { OAuth2Client } = require('google-auth-library');
+const bodyParser = require('body-parser');
 
-const app = express()
-const PORT = process.env.PORT || 5000
+const app = express();
+const PORT = process.env.PORT || 5000;
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+const algorithm = 'aes-256-cbc';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// Configuração de CORS
-app.use(cors())
-app.use(express.json())
+// Função para criptografar o CPF
+function encrypt(text) {
+  if (!text || !ENCRYPTION_KEY) {
+    throw new Error('Texto ou chave de criptografia ausente.');
+  }
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(ENCRYPTION_KEY, 'utf8'), iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+// Configuração de middlewares
+app.use(cors());
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Configuração do pool de conexão com o banco de dados
 const pool = new Pool({
@@ -27,43 +46,61 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-// Criação da pasta de upload se não existir
-const uploadDir = path.join(__dirname, process.env.UPLOAD_DIR || 'uploads')
+// Configuração do Multer para uploads de arquivos
+const uploadDir = path.join(__dirname, process.env.UPLOAD_DIR || 'uploads');
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir)
+  fs.mkdirSync(uploadDir);
 }
-
-// Configuração do Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-})
-const upload = multer({ storage })
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+});
+const upload = multer({ storage });
+app.use('/uploads', express.static(uploadDir));
 
+// Rotas
+app.post('/auth/google/verify', async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: 'Token não fornecido.' });
+  }
 
-// Variaveis de ambiente para o Gov.br
-const CLIENT_ID = process.env.GOVBR_CLIENT_ID
-const CLIENT_SECRET = process.env.GOVBR_CLIENT_SECRET
-const CALLBACK_URL = process.env.GOVBR_CALLBACK_URL || 'http://localhost:5000/auth/govbr/callback'
-const GOVBR_AUTH_URL = 'https://sso.staging.acesso.gov.br/authorize'
-const GOVBR_TOKEN_URL = 'https://sso.staging.acesso.gov.br/token'
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    res.json({
+      success: true,
+      user: {
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao verificar o token do Google:', error.message);
+    res.status(401).json({ error: 'Token inválido ou expirado.' });
+  }
+});
 
 app.get('/auth/govbr', (req, res) => {
-  // Dados de teste para simular o retorno do Gov.br
   const nomeGovbr = 'João da Silva';
   const cpf = '12345678900';
-  const accessToken = 'simulated_access_token_123'; // Token de teste
-
-  // Redireciona de volta para o frontend com os dados de teste
+  const accessToken = 'simulated_access_token_123';
   res.redirect(`http://localhost:5173/?nome_govbr=${nomeGovbr}&cpf=${cpf}&access_token=${accessToken}`);
 });
 
-// --- Rota 2: Rota de retorno (callback) após a autenticação (versão real) ---
 app.get('/auth/govbr/callback', async (req, res) => {
-  const { code } = req.query
+  const { code } = req.query;
+  const CLIENT_ID = process.env.GOVBR_CLIENT_ID;
+  const CLIENT_SECRET = process.env.GOVBR_CLIENT_SECRET;
+  const CALLBACK_URL = process.env.GOVBR_CALLBACK_URL || 'http://localhost:5000/auth/govbr/callback';
+  const GOVBR_TOKEN_URL = 'https://sso.staging.acesso.gov.br/token';
 
   if (!code) {
-    return res.status(400).send('Código de autorização não recebido.')
+    return res.status(400).send('Código de autorização não recebido.');
   }
 
   try {
@@ -78,57 +115,59 @@ app.get('/auth/govbr/callback', async (req, res) => {
       }),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       }
-    )
+    );
 
-    const { id_token, access_token } = tokenResponse.data
-    const userInfo = jwt.decode(id_token)
+    const { id_token, access_token } = tokenResponse.data;
+    const userInfo = jwt.decode(id_token);
 
     const frontendUrl = `http://localhost:5173/?nome_govbr=${encodeURIComponent(userInfo.name)}&cpf=${encodeURIComponent(userInfo.sub)}&access_token=${encodeURIComponent(access_token)}`;
     res.redirect(frontendUrl);
-
   } catch (error) {
-    console.error('Erro na autenticação Gov.br:', error.response?.data || error.message)
-    res.status(500).send('Erro na autenticação.')
+    console.error('Erro na autenticação Gov.br:', error.response?.data || error.message);
+    res.status(500).send('Erro na autenticação.');
   }
-})
+});
 
-
-// Rota de assinatura
 app.post('/api/assinatura', upload.single('foto'), async (req, res) => {
   const { nome, email, telefone, socioNumero, cpf } = req.body;
-  const foto = req.file?.filename || null;
-
-  if (!nome || !email || !telefone || !socioNumero || !cpf || !foto) {
-    return res.status(400).json({ error: 'Dados incompletos' });
-  }
+  const caminhoFoto = req.file ? req.file.path : null;
 
   try {
-    const insertQuery = `
+    if (!nome || !email || !telefone || !socioNumero || !cpf || !caminhoFoto) {
+      return res.status(400).json({ error: 'Todos os campos são obrigatórios, incluindo a foto.' });
+    }
+
+    const cpfCriptografado = encrypt(cpf);
+    
+    const sql = `
       INSERT INTO assinaturas (
         nome_completo,
         email,
         telefone,
         numero_associado,
-        cpf,
-        foto,
-        data_assinatura
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
-      RETURNING *;
+        cpf_criptografado,
+        foto
+      ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
     `;
-    const values = [nome, email, telefone, socioNumero, cpf, foto];
 
-    const result = await pool.query(insertQuery, values);
-    console.log('Dados salvos no banco de dados:', result.rows[0]);
+    const values = [
+      nome,
+      email,
+      telefone,
+      socioNumero,
+      cpfCriptografado,
+      caminhoFoto,
+    ];
 
-    return res.status(200).json({ message: 'Assinatura registrada com sucesso!' });
+    const result = await pool.query(sql, values);
+    res.status(201).json({ message: 'Assinatura registrada com sucesso!', assinatura: result.rows[0] });
 
   } catch (error) {
-    console.error('Erro ao salvar os dados no banco de dados:', error.message);
-    return res.status(500).json({ error: 'Erro ao salvar a assinatura.', details: error.message });
+    console.error('Erro ao salvar a assinatura:', error);
+    res.status(500).json({ error: 'Erro ao salvar a assinatura.', details: error.message });
   }
 });
 
