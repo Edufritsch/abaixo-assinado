@@ -71,3 +71,107 @@ button:hover {
   box-shadow: 4px 4px 8px #900,
               -4px -4px 8px #fdd;
 }
+/* Estilo para a caixa dos termos de uso */
+.termos-container {
+  background: #E0E0E0;
+  border-radius: 20px;
+  box-shadow: 8px 8px 15px #A3A3A3,
+             -8px -8px 15px #FFFFFF;
+  padding: 30px;
+  margin-top: 20px;
+  max-height: 400px; /* Limita a altura para permitir a rolagem */
+  overflow-y: scroll; /* Ativa a rolagem vertical */
+  font-size: 0.9em;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Garante que o corpo da página use todo o viewport */
+body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex; /* Habilita o Flexbox */
+  justify-content: center; /* Centraliza horizontalmente */
+  align-items: center; /* Centraliza verticalmente (se necessário) */
+  font-family: Arial, sans-serif;
+  background-color: #f7f7f7; /* Cor de fundo suave */
+}
+
+/* Estiliza o container principal */
+.container {
+  width: 100%;
+  max-width: 450px; /* Limita a largura máxima do conteúdo para PC */
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  text-align: center; /* Centraliza textos e elementos inline */
+  box-sizing: border-box; /* Garante que padding e border não aumentem a largura */
+}
+
+/* Centraliza especificamente o container de login */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza os itens (logo, parágrafo, botão) */
+  justify-content: center;
+}
+.logo {
+  max-width: 150px; /* Tamanho razoável para o logo */
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.etapa {
+  width: 100%;
+  max-width: 400px; /* Garante que imagens grandes não fiquem gigantes no PC */
+  height: auto;
+  margin: 20px 0;
+  border-radius: 8px; /* Opcional: bordas arredondadas */
+}
+
+/* Estilo para a barra de rolagem neomorph */
+.termos-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.termos-container::-webkit-scrollbar-track {
+  background: #E0E0E0;
+  border-radius: 10px;
+  box-shadow: inset 2px 2px 5px #B8B8B8,
+              inset -2px -2px 5px #FFFFFF;
+}
+
+.termos-container::-webkit-scrollbar-thumb {
+  background-color: #C0C0C0;
+  border-radius: 10px;
+  border: 3px solid #E0E0E0;
+}
+
+/* Estilo do botão "frio" (cinza) */
+.accept-button {
+  width: 100%;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: not-allowed;
+  margin-top: 20px;
+  color: #555;
+  background: #E0E0E0;
+  box-shadow: 6px 6px 12px #B8B8B8,
+             -6px -6px 12px #FFFFFF;
+  transition: all 0.3s ease;
+}
+
+/* Estilo do botão "quente" (vermelho) - quando ativado */
+.accept-button.active {
+  cursor: pointer;
+  color: white;
+  background: #B00; /* Vermelho forte */
+  box-shadow: 4px 4px 8px #900,
+             -4px -4px 8px #D00;
+  transform: translateY(2px);
+}
