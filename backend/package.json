@@ -15,11 +15,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "pg": "^8.16.3"
-  },
-  "description": "API do abaixo-assinado",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "pg": "^8.16.3",
+    "google-auth-library": "^10.3.0"
+  }
 }
