@@ -6,7 +6,8 @@ export async function enviarAssinatura(formData) {
   data.append('foto', formData.foto)
 
   try {
-    const response = await fetch('http://localhost:5000/api/assinatura', {
+    const response = await fetch('https://abaixo-assinado-mwg6.onrender.com/api/assinatura', {
+
       method: 'POST',
       body: data
     })
