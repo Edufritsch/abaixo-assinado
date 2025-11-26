@@ -173,7 +173,8 @@ function AppComponent() {
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/assinatura', data, {
+            const response = await axios.post('https://abaixo-assinado-mwg6.onrender.com/api/assinatura', data, {
+
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -201,7 +202,8 @@ function AppComponent() {
 
         try {
             // Envia o ID e as preferências atuais do formData
-            await axios.post('http://localhost:5000/api/assinatura/consent', {
+            await axios.post('https://abaixo-assinado-mwg6.onrender.com/api/assinatura/consent', {
+
                 id: assinaturaId, // Chave primária para a atualização
                 receberEmail: formData.receberEmail,
                 receberTelefone: formData.receberTelefone,
